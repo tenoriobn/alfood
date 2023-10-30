@@ -66,4 +66,4 @@ const ListaRestaurantes = () => {
   </section>)
 }
 
-export default ListaRestaurantes
+export default ListaRestaurantes;
