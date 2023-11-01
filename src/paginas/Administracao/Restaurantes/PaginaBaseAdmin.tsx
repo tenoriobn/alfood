@@ -23,6 +23,18 @@ export default function PaginaBaseAdmin() {
                   Novo Restaurante
                 </Button>
               </Link>
+
+              <Link component={RouterLink}  to="/admin/pratos">
+                <Button sx={{ my: 2, color: 'white' }}>
+                  Pratos
+                </Button>
+              </Link>
+
+              <Link component={RouterLink}  to="/admin/pratos/novo">
+                <Button sx={{ my: 2, color: 'white' }}>
+                  Novo Prato
+                </Button>
+              </Link>
             </Box>
           </Toolbar>
         </Container>
