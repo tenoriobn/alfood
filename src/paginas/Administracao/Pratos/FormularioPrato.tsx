@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import http from '../../../http';
 import ITag from '../../../interfaces/ITag';
 import IRestaurante from '../../../interfaces/IRestaurante';
+import { useParams } from 'react-router-dom';
+import IPrato from '../../../interfaces/IPrato';
 
 export default function FormularioPrato() {
   const [nomePrato, setNomePrato] = useState('');
@@ -12,9 +14,11 @@ export default function FormularioPrato() {
   const [tag, setTag] = useState('');
 
   const [restaurantes, setRestaurantes] = useState<IRestaurante[]>([]);
-  const [restaurante, setRestaurante] = useState('');
+  const [restaurante, setRestaurante] = useState(0);
 
   const [imagem, setImagem] = useState<File | null>(null);
+
+  const parametros = useParams();
 
   useEffect(() => {
     http.get<{ tags: ITag[] }>('tags/')
@@ -23,6 +27,18 @@ export default function FormularioPrato() {
     http.get<IRestaurante[]>('restaurantes/')
       .then(resposta => setRestaurantes(resposta.data))
   }, []);
+
+  useEffect(() => {
+    if (parametros.id) {
+      http.get<IPrato>(`pratos/${parametros.id}/`)
+        .then(resposta => {
+          setNomePrato(resposta.data.nome)
+          setDescricao(resposta.data.descricao)
+          setTag(resposta.data.tag)
+          setRestaurante(resposta.data.restaurante);
+        })
+    }
+  }, [parametros])
 
   const selecionarArquivo = (evento: React.ChangeEvent<HTMLInputElement>) => {
     if (evento.target.files?.length) {
@@ -41,28 +57,36 @@ export default function FormularioPrato() {
     formData.append('descricao', descricao)
 
     formData.append('tag', tag)
-    formData.append('restaurante', restaurante)
+    formData.append('restaurante', restaurante.toString())
 
-    if (imagem) {
+    if (!parametros.id && imagem) {
       formData.append('imagem', imagem)
     }
 
+    const url = parametros.id ? `pratos/${parametros.id}/` : 'pratos/'
+    const method = parametros.id ? 'PUT' : 'POST'
+
     http.request({
-      url: 'pratos/',
-      method: 'POST',
+      url,
+      method,
       headers: {
         'Content-Type': 'multipart/form-data'
       },
       data: formData
     })
-      .then(() => {
-        setNomePrato('');
-        setDescricao('');
-        setTag('');
-        setRestaurante('');
-        alert('Prato cadastrado com sucesso!');
-      })
-      .catch(erro => console.log(erro))
+    .then(() => {
+      if (parametros.id) {
+          alert('Prato atualizado com sucesso!')                    
+      } else {
+          setNomePrato('')
+          setDescricao('')
+          setTag('')
+          setRestaurante(0)
+          alert('Prato cadastrado com sucesso!')
+          setImagem(null)
+      }
+    })
+    .catch(erro => console.log(erro))
   }
 
   return (
@@ -99,7 +123,8 @@ export default function FormularioPrato() {
 
         <FormControl margin="dense" fullWidth>
           <InputLabel id="select-restaurante">Restaurante</InputLabel>
-          <Select labelId="select-restaurante" value={restaurante} onChange={evento => setRestaurante(evento.target.value)}>
+          <Select labelId="select-restaurante" value={restaurante} onChange={evento => setRestaurante(Number(evento.target.value))}>
+          <MenuItem value={0}>Nenhum restaurante selecionado</MenuItem>
             {restaurantes.map(restaurante => 
               <MenuItem key={restaurante.id} value={restaurante.id}>
                 {restaurante.nome}
@@ -108,7 +133,7 @@ export default function FormularioPrato() {
           </Select>
         </FormControl>
         
-        <input type="file" onChange={selecionarArquivo} />
+        {!parametros.id && <input type="file" onChange={selecionarArquivo} />}
 
         <Button sx={{ marginTop: 1 }} type='submit' fullWidth variant="outlined">Salvar</Button>
       </Box>
